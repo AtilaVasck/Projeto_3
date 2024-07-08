@@ -16,6 +16,7 @@ const server = createServer((request, response)=>{
             response.writeHead(500, {"Content-Type" : "application/json"});
             response.end (JSON.stringify({message: "Erro ao ler dados"}));
             return
+            
         }
         response.writeHead(200, {"Content-Type" : "application/json"});
         response.end(JSON.stringify(receitas));    
