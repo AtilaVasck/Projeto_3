@@ -1,8 +1,9 @@
 import {createServer} from 'node:http';
 import fs from "node:fs";
+import { v4 as uuidv4 } from 'uuid';
 
 import lerDadosReceita from './helper/lerReceitas';
-const receitas = [];
+
 const PORT = 3333;
 
 const server = createServer((request, response)=>{
@@ -11,15 +12,41 @@ const server = createServer((request, response)=>{
     if( method === 'GET' && url === "/receitas"){
         lerDadosReceita((err, receitas)=>{
 
-        if(err){response.writeHead(500, {"Content-Type" : "application/json"});
-        response.end (JSON.stringify({message: "Erro ao ler dados"}));
-        return
+        if(err){
+            response.writeHead(500, {"Content-Type" : "application/json"});
+            response.end (JSON.stringify({message: "Erro ao ler dados"}));
+            return
         }
         response.writeHead(200, {"Content-Type" : "application/json"});
         response.end(JSON.stringify(receitas));    
     })
     }else if( method === 'POST' && url === '/receitas'){
-
+        let body = ""
+        request.on("data",(chunk)=>{
+            body += chunk;
+        })
+        request.on('end',()=>{
+            //console.log(novaReceita.categoria)
+            const novaReceita = JSON.parse(body)
+            lerDadosReceita((err, receitas)=>{
+                if(err){
+                    response.writeHead(500, {"Content-Type" : "application/json"});
+                    response.end (JSON.stringify({message: "Erro ao ler receitas"}));                                                                                                                                      
+                    return
+                }
+                novaReceita.id = uuidv4();
+                receitas.push(novaReceita);
+                fs.writeFile("receitas.json", JSON.stringify(receitas, null, 2), ()=>{
+                    if(err){
+                        response.writeHead(500, {"Content-Type" : "application/json"});
+                        response.end (JSON.stringify({message: "Erro ao cadastrar receitas"}));                                                                                                                                   
+                        return
+                    }
+                    response.writeHead(201, {"Content-Type" : "application/json"});
+                    response.end (JSON.stringify({novaReceita}));
+                })
+            })            
+        })
     }else if( method === 'GET' && url.startsWith('/receitas/')){
 
     }else if( method === 'PUT' && url.startsWith('/receitas/')){
